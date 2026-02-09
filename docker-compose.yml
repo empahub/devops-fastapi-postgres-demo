@@ -1,0 +1,39 @@
+name: devops-mini-api
+
+services:
+  db:
+    image: postgres:16
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: appdb
+      POSTGRES_PASSWORD: apppass
+      POSTGRES_USER: appuser
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U appuser -d appdb || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  api:
+    build: .
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      DB_HOST: db
+      DB_NAME: appdb
+      DB_PASSWORD: apppass
+      DB_PORT: "5432"
+      DB_USER: appuser
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  pgdata:
+
